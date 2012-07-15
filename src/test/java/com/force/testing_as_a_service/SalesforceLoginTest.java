@@ -9,7 +9,10 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -24,13 +27,26 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
  */
 @RunWith(Parameterized.class)
 public class SalesforceLoginTest {
-	private WebDriver driver;
+	private final WebDriver driver;
 	
 	private static String username;
 	private static String password;
 	
-	public SalesforceLoginTest(WebDriver driver) {
-		this.driver = driver;
+	@Rule public final TestRule rule;
+	
+	public SalesforceLoginTest(WebDriver anyDriver) {
+		this.driver = anyDriver;
+		
+		// we want to override the failure message to include the driver that failed
+		this.rule = new TestWatcher() {
+	        @Override
+	        protected void failed(final Throwable e, final org.junit.runner.Description description) {
+	            final AssertionError x = new AssertionError(
+	                    driver.getClass().getSimpleName() + "." + description.getDisplayName() + ": " + e.getMessage());
+	            x.setStackTrace(e.getStackTrace());
+	            throw x;
+	        }
+	    };
 	}
 	
 	@Parameters
@@ -64,7 +80,6 @@ public class SalesforceLoginTest {
 	public void tearDown() {
 		driver.manage().deleteAllCookies();
 		driver.quit();
-		driver = null;
 	}
 	
 	@AfterClass
